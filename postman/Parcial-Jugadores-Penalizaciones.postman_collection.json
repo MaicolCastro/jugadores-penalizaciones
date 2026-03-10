@@ -1,0 +1,399 @@
+{
+  "info": {
+    "_postman_id": "5c3e1ab5-3c12-4a1d-8e64-4d4b6b4d1c01",
+    "name": "Parcial - Jugadores y Tarjetas (Reactive + JWT)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "adminUser", "value": "admin" },
+    { "key": "adminPass", "value": "admin123" },
+    { "key": "userUser", "value": "user1" },
+    { "key": "userPass", "value": "user1234" },
+    { "key": "adminToken", "value": "" },
+    { "key": "userToken", "value": "" },
+    { "key": "jugadorId", "value": "" },
+    { "key": "tarjetaId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00 - Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/actuator/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health UP', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('UP');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Register ADMIN",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{adminUser}}\",\n  \"password\": \"{{adminPass}}\",\n  \"role\": \"ADMIN\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Puede ser 201 (creado) o 409 si ya existe",
+              "pm.test('register admin ok', function () {",
+              "  pm.expect([201, 409]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Login ADMIN (set adminToken)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{adminUser}}\",\n  \"password\": \"{{adminPass}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('login admin ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('accessToken');",
+              "  pm.environment.set('adminToken', json.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Register USER",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{userUser}}\",\n  \"password\": \"{{userPass}}\",\n  \"role\": \"USER\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('register user ok', function () {",
+              "  pm.expect([201, 409]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Login USER (set userToken)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{userUser}}\",\n  \"password\": \"{{userPass}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('login user ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.environment.set('userToken', json.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - SECURITY - GET jugadores without token (401 JSON)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/jugadores"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('401 json', function () {",
+              "  pm.response.to.have.status(401);",
+              "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+              "  const j = pm.response.json();",
+              "  pm.expect(j.status).to.eql(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - JUGADORES - Create (ADMIN) (set jugadorId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/jugadores",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Juan Perez\",\n  \"email\": \"juan+{{$timestamp}}@demo.com\",\n  \"edad\": 22\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('created jugador', function () {",
+              "  pm.expect([200, 201]).to.include(pm.response.code);",
+              "  const j = pm.response.json();",
+              "  pm.expect(j).to.have.property('id');",
+              "  pm.environment.set('jugadorId', j.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - JUGADORES - List (USER)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+        "url": "{{baseUrl}}/api/jugadores"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('list jugadores ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const j = pm.response.json();",
+              "  pm.expect(Array.isArray(j)).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - JUGADORES - Update (ADMIN)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/jugadores/{{jugadorId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Juan Actualizado\",\n  \"email\": \"juan.actualizado+{{$timestamp}}@demo.com\",\n  \"edad\": 23\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('update jugador ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().nombre).to.eql('Juan Actualizado');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - JUGADORES - Create (USER) forbidden (403 JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{userToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/jugadores",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"No permitido\",\n  \"email\": \"forbidden+{{$timestamp}}@demo.com\",\n  \"edad\": 20\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('403 json', function () {",
+              "  pm.response.to.have.status(403);",
+              "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+              "  pm.expect(pm.response.json().status).to.eql(403);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 - TARJETAS - Create (ADMIN) (set tarjetaId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/tarjetas",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jugadorId\": \"{{jugadorId}}\",\n  \"tipo\": \"AMARILLA\",\n  \"puntos\": 10,\n  \"descripcion\": \"Falta leve\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('created tarjeta', function () {",
+              "  pm.expect([200, 201]).to.include(pm.response.code);",
+              "  const j = pm.response.json();",
+              "  pm.expect(j).to.have.property('id');",
+              "  pm.environment.set('tarjetaId', j.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 - TARJETAS - List by jugadorId (USER)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/tarjetas?jugadorId={{jugadorId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tarjetas"],
+          "query": [{ "key": "jugadorId", "value": "{{jugadorId}}" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('list tarjetas ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const j = pm.response.json();",
+              "  pm.expect(Array.isArray(j)).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "22 - TARJETAS - Update (ADMIN)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/tarjetas/{{tarjetaId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tipo\": \"ROJA\",\n  \"puntos\": 50,\n  \"descripcion\": \"Falta grave\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('update tarjeta ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().tipo).to.eql('ROJA');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "30 - Cleanup - Delete tarjeta (ADMIN)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+        "url": "{{baseUrl}}/api/tarjetas/{{tarjetaId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('delete tarjeta ok', function () {",
+              "  pm.expect([200, 204]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "31 - Cleanup - Delete jugador (ADMIN)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+        "url": "{{baseUrl}}/api/jugadores/{{jugadorId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('delete jugador ok', function () {",
+              "  pm.expect([200, 204]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,14 @@
+spring:
+  r2dbc:
+    url: r2dbc:mysql://mysql:3306/parcial?sslMode=DISABLED
+    username: parcial
+    password: parcial
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+
+app:
+  db:
+    schema: classpath:db/schema-mysql.sql

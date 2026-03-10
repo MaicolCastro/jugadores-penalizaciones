@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: jugadores-penalizaciones
+  main:
+    web-application-type: reactive
+  jackson:
+    default-property-inclusion: non_null
+
+app:
+  security:
+    jwt:
+      issuer: "co.edu.parcial"
+      access-token-ttl-minutes: 120
+      # En producción: usar una llave larga por env var (mín 32 bytes). Para el parcial, está hardcodeada.
+      secret: ${APP_SECURITY_JWT_SECRET:CHANGE_ME_TO_A_32+_BYTE_SECRET_FOR_HS256_2026}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+
+logging:
+  level:
+    org.springframework.security: INFO
