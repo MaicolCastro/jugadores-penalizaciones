@@ -1,8 +1,8 @@
 spring:
   r2dbc:
-    url: r2dbc:postgresql://postgres:5432/parcial
-    username: parcial
-    password: parcial
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://postgres:5432/parcial}
+    username: ${SPRING_R2DBC_USERNAME:parcial}
+    password: ${SPRING_R2DBC_PASSWORD:parcial}
     pool:
       enabled: true
       initial-size: 5
